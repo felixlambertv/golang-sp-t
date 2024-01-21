@@ -1,0 +1,170 @@
+openapi: 3.0.0
+info:
+  title: User Registration and Authentication Service
+  description: API for user registration, login, and profile retrieval.
+  version: "1.0.0"
+servers:
+  - url: 'http://localhost:8080'
+paths:
+  /register:
+    post:
+      summary: Register a new user
+      operationId: userRegister
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrationRequest'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationResponse'
+        '400':
+          description: Bad Request - Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+        '409':
+            description: Bad Request - Phone number already exists
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/GeneralErrorResponse'
+  /login:
+    post:
+      summary: Authenticate a user
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: User logged in successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Bad Request - Login failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+  /profile:
+    get:
+      summary: Get user profile information
+      operationId: getProfile
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Profile information retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileResponse'
+        '403':
+          description: Access Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenResponse'
+components:
+  schemas:
+    UpdateProfileRequest:
+      type: object
+      properties:
+        phoneNumber:
+          type: string
+          format: phone
+          example: '+6281284123'
+          description: 'User phone number. Must be unique.'
+        fullName:
+          type: string
+          example: 'Joni Andreas'
+          description: 'User full name.'
+    RegistrationRequest:
+      type: object
+      properties:
+        phoneNumber:
+          type: string
+          pattern: '^\+62[0-9]{8,10}$'
+        fullName:
+          type: string
+          minLength: 3
+          maxLength: 60
+        password:
+          type: string
+          minLength: 6
+          maxLength: 64
+      required:
+        - phoneNumber
+        - fullName
+        - password
+    RegistrationResponse:
+      type: object
+      required:
+        - userId
+      properties:
+        userId:
+          type: integer
+          minimum: 0
+    LoginRequest:
+      type: object
+      properties:
+        phoneNumber:
+          type: string
+        password:
+          type: string
+      required:
+        - phoneNumber
+        - password
+    LoginResponse:
+      type: object
+      properties:
+        userId:
+          type: integer
+        token:
+          type: string
+      required:
+        - userId
+        - token
+    ProfileResponse:
+      type: object
+      properties:
+        fullName:
+          type: string
+        phoneNumber:
+          type: string
+    BadRequestResponse:
+      type: object
+      properties:
+        invalidFields:
+          type: array
+          items:
+            type: string
+    GeneralErrorResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+    ForbiddenResponse:
+      type: object
+      properties:
+        message:
+          type: string
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
